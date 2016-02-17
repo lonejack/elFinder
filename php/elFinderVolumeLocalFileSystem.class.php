@@ -195,7 +195,7 @@ class elFinderVolumeLocalFileSystem extends elFinderVolumeDriver {
 	 * @return number|bool
 	 */
 	public function localFileSystemInotify($path, $standby, $compare) {
-		if (isset($this->sessionCache['localFileSystemInotify_disable'])) {
+		if (isset($this->sessionCache->localFileSystemInotify_disable)) {
 			return false;
 		}
 		$path = realpath($path);
@@ -217,11 +217,11 @@ class elFinderVolumeLocalFileSystem extends elFinderVolumeDriver {
 			return $compare;
 		}
 		// error
-		// cache to $_SESSION
+		// cache to session
 		$sessionStart = $this->sessionRestart();
 		if ($sessionStart) {
-			$this->sessionCache['localFileSystemInotify_disable'] = true;
-			elFinder::sessionWrite();
+			$this->sessionCache->localFileSystemInotify_disable = true;
+			elFinderSession::getInstance()->write();
 		}
 		
 		return false;

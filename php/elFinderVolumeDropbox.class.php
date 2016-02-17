@@ -135,8 +135,9 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 	public function netmountPrepare($options) {
 		if (empty($options['consumerKey']) && defined('ELFINDER_DROPBOX_CONSUMERKEY')) $options['consumerKey'] = ELFINDER_DROPBOX_CONSUMERKEY;
 		if (empty($options['consumerSecret']) && defined('ELFINDER_DROPBOX_CONSUMERSECRET')) $options['consumerSecret'] = ELFINDER_DROPBOX_CONSUMERSECRET;
-		
-		if ($options['user'] === 'init') {
+        $session = $this->getSession();
+
+        if ($options['user'] === 'init') {
 
 			if (! $this->dropbox_phpFound || empty($options['consumerKey']) || empty($options['consumerSecret']) || !class_exists('PDO', false)) {
 				return array('exit' => true, 'body' => '{msg:errNetMountNoDriver}');
@@ -164,10 +165,10 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 
 			if ($options['pass'] === 'init') {
 				$html = '';
-				if (isset($_SESSION['elFinderDropboxTokens'])) {
+				if ( isset($session->elFinderDropboxTokens) ) {
 					// token check
 					try {
-						list(, $accessToken, $accessTokenSecret) = $_SESSION['elFinderDropboxTokens'];
+						list(, $accessToken, $accessTokenSecret) = $session->elFinderDropboxTokens;
 						$this->oauth->setToken($accessToken, $accessTokenSecret);
 						$this->dropbox = new Dropbox_API($this->oauth, $this->options['root']);
 						$this->dropbox->getAccountInfo();
@@ -176,7 +177,7 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 						</script>';
 						$html = $script;
 					} catch (Dropbox_Exception $e) {
-						unset($_SESSION['elFinderDropboxTokens']);
+                        unset($session->elFinderDropboxTokens);						
 					}
 				}
 				if (! $html) {
@@ -201,8 +202,7 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 					} catch (Dropbox_Exception $e) {
 						return array('exit' => true, 'body' => '{msg:errAccess}');
 					}
-					
-					$_SESSION['elFinderDropboxAuthTokens'] = $tokens;
+					$session->elFinderDropboxAuthTokens = $tokens;
 					$html = '<input id="elf-volumedriver-dropbox-host-btn" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" value="{msg:btnApprove}" type="button" onclick="window.open(\''.$url.'\')">';
 					$html .= '<script>
 						$("#'.$options['id'].'").elfinder("instance").trigger("netmount", {protocol: "dropbox", mode: "makebtn"});
@@ -210,10 +210,10 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 				}
 				return array('exit' => true, 'body' => $html);
 			} else {
-				$this->oauth->setToken($_SESSION['elFinderDropboxAuthTokens']);
-				unset($_SESSION['elFinderDropboxAuthTokens']);
+				$this->oauth->setToken($session->elFinderDropboxAuthTokens);
+				unset($session->elFinderDropboxAuthTokens);
 				$tokens = $this->oauth->getAccessToken();
-				$_SESSION['elFinderDropboxTokens'] = array($_GET['uid'], $tokens['token'], $tokens['token_secret']);
+				$session->elFinderDropboxTokens = array($_GET['uid'], $tokens['token'], $tokens['token_secret']);
 				
 				$out = array(
 					'node' => $_GET['node'],
@@ -224,8 +224,8 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 				return array('exit' => 'callback', 'out' => $out);
 			}
 		}
-		if (isset($_SESSION['elFinderDropboxTokens'])) {
-			list($options['dropboxUid'], $options['accessToken'], $options['accessTokenSecret']) = $_SESSION['elFinderDropboxTokens'];
+		if (isset($session->elFinderDropboxTokens)) {
+			list($options['dropboxUid'], $options['accessToken'], $options['accessTokenSecret']) = $session->elFinderDropboxTokens;
 		}
 		unset($options['user'], $options['pass']);
 		return $options;
@@ -334,12 +334,12 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 		}
 
 		$this->rootName = $this->options['alias'];
-
+        $session = $this->getSession();
 		try {
 			$this->oauth->setToken($this->options['accessToken'], $this->options['accessTokenSecret']);
 			$this->dropbox = new Dropbox_API($this->oauth, $this->options['root']);
 		} catch (Dropbox_Exception $e) {
-			unset($_SESSION['elFinderDropboxTokens']);
+			unset($session->elFinderDropboxTokens);
 			return $this->setError('Dropbox error: '.$e->getMessage());
 		}
 		
@@ -349,7 +349,7 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 				$res = $this->dropbox->getAccountInfo();
 				$this->options['dropboxUid'] = $res['uid'];
 			} catch (Dropbox_Exception $e) {
-				unset($_SESSION['elFinderDropboxTokens']);
+				unset($session->elFinderDropboxTokens);
 				return $this->setError('Dropbox error: '.$e->getMessage());
 			}
 		}
@@ -438,6 +438,10 @@ class elFinderVolumeDropbox extends elFinderVolumeDriver {
 			$this->disabled[] = 'extract';
 		}
 	}
+
+    public function getSession(){
+        return elFinderSession::getInstance();
+    }
 	
 	/**
 	 * Check DB for delta cache

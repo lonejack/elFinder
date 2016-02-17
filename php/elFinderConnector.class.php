@@ -177,7 +177,11 @@ class elFinderConnector {
 			}
 
 			// unlock session data for multiple access
-			session_id() && session_write_close();
+            $session = $this->getSession();
+            if( $session->get_id() ){
+                $session->writeClose();
+            }
+			 
 			// client disconnect should abort
 			ignore_user_abort(false);
 
@@ -222,4 +226,8 @@ class elFinderConnector {
 		$magic_quotes_gpc && ($res = stripslashes($res));
 		return $res;
 	}
+
+    public function getSession(){
+        return elFinderSession::getInstance();
+    }
 }// END class 

@@ -1,7 +1,7 @@
 <?php
 
 error_reporting(0); // Set E_ALL for debuging
-
+include_once dirname(__FILE__).DIRECTORY_SEPARATOR.'elFinderSession.php';
 include_once dirname(__FILE__).DIRECTORY_SEPARATOR.'elFinderConnector.class.php';
 include_once dirname(__FILE__).DIRECTORY_SEPARATOR.'elFinder.class.php';
 include_once dirname(__FILE__).DIRECTORY_SEPARATOR.'elFinderVolumeDriver.class.php';

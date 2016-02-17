@@ -565,11 +565,9 @@ abstract class elFinderVolumeDriver {
 	 */
 	protected $subdirsCache = array();
 	
-	/**
-	 * Reference of $_SESSION[elFinder::$sessionCacheKey][$this->id]
-	 * 
-	 * @var array
-	 */
+    /**
+     * @var elFinderSessionVolume
+     */
 	protected $sessionCache;
 	
 	
@@ -645,11 +643,13 @@ abstract class elFinderVolumeDriver {
 	}
 	
 	protected function sessionRestart() {
-		$start = @session_start();
-		if (!isset($_SESSION[elFinder::$sessionCacheKey])) {
-			$_SESSION[elFinder::$sessionCacheKey] = array();
+        $session = elFinderSession::getInstance();
+        //$start = $session->start(); ??
+		
+		if ( !$session->hasData() ) {
+			$session->clean();
 		}
-		$this->sessionCache = &$_SESSION[elFinder::$sessionCacheKey][$this->id];
+		$this->sessionCache = $session->getVolumeSession($this->id);
 		return $start;
 	}
 	/*********************************************************************/
@@ -784,11 +784,8 @@ abstract class elFinderVolumeDriver {
 		
 		$argInit = !empty($this->ARGS['init']);
 		
-		// session cache
-		if ($argInit || ! isset($_SESSION[elFinder::$sessionCacheKey][$this->id])) {
-			$_SESSION[elFinder::$sessionCacheKey][$this->id] = array();
-		}
-		$this->sessionCache = &$_SESSION[elFinder::$sessionCacheKey][$this->id];
+		// session cache		
+		$this->sessionCache = elFinderSession::getInstance()->getVolumeSession($this->id);
 		
 		// default file attribute
 		$this->defaults = array(
@@ -2855,15 +2852,13 @@ abstract class elFinderVolumeDriver {
 			return false;
 		}
 		$is_root = ($path == $this->root);
+        
 		if ($is_root) {
-			$rootKey = md5($path);
-			if (!isset($this->sessionCache['rootstat'])) {
-				$this->sessionCache['rootstat'] = array();
-			}
+			//$rootKey = md5($path);
 			if (! $this->isMyReload()) {
 				// need $path as key for netmount/netunmount
-				if (isset($this->sessionCache['rootstat'][$rootKey])) {
-					if ($ret = elFinder::sessionDataDecode($this->sessionCache['rootstat'][$rootKey], 'array')) {
+				if (isset($this->sessionCache->rootstat)) {
+					if ($ret = elFinder::sessionDataDecode($this->sessionCache->rootstat, 'array')) {
 						return $ret;
 					}
 				}
@@ -2874,8 +2869,8 @@ abstract class elFinderVolumeDriver {
 			: $this->updateCache($path, $this->convEncOut($this->_stat($this->convEncIn($path))));
 		if ($is_root) {
 			$this->sessionRestart();
-			$this->sessionCache['rootstat'][$rootKey] = elFinder::sessionDataEncode($ret);
-			elFinder::sessionWrite();
+			$this->sessionCache->rootstat = elFinder::sessionDataEncode($ret);
+			elFinderSession::getInstance()->write();
 		}
 		return $ret;
 	}
@@ -3062,8 +3057,8 @@ abstract class elFinderVolumeDriver {
 	protected function clearcache() {
 		$this->cache = $this->dirsCache = array();
 		$this->sessionRestart();
-		unset($this->sessionCache['rootstat'][md5($this->root)]);
-		elFinder::sessionWrite();
+		unset($this->sessionCache->rootstat);
+		elFinderSession::getInstance()->write();
 	}
 	
 	/**
@@ -4350,9 +4345,8 @@ abstract class elFinderVolumeDriver {
 	 */
 	protected function getArchivers($use_cache = true) {
 
-		$sessionKey = 'ARCHIVERS_CACHE';
-		if ($use_cache && isset($this->sessionCache[$sessionKey]) && is_array($this->sessionCache[$sessionKey])) {
-			return $this->sessionCache[$sessionKey];
+		if ($use_cache && isset($this->sessionCache->ARCHIVERS_CACHE) && is_array($this->sessionCache->ARCHIVERS_CACHE)) {
+			return $this->sessionCache->ARCHIVERS_CACHE;
 		}
 		
 		$arcs = array(
@@ -4461,7 +4455,7 @@ abstract class elFinderVolumeDriver {
 			}
 		}
 		
-		$this->sessionCache[$sessionKey] = $arcs;
+		$this->sessionCache->ARCHIVERS_CACHE = $arcs;
 		return $arcs;
 	}
 
