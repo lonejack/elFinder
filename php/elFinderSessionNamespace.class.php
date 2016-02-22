@@ -27,27 +27,20 @@ class elFinderSessionNamespace  {
     public function __construct($path)
     {
         $this->actualPath = $path;
-        $x = explode('/',$path);
-        $z = array_pop($x);
+        $this->rebase();
+    }
+    
+    public function rebase(){
+        $x = explode('/',$this->actualPath);
+        //$z = array_pop($x);
         $start = &$_SESSION;
-        if( count($x) == 0 ){
-            if( isset($start[$z])){
-                $this->start = &$start[$z];
-                return;
+        foreach($x as $sub){
+            if( !isset($start[$sub])){
+                $start[$sub] = array();
             }
+            $start = &$start[$sub];
         }
-        else {
-            foreach($x as $sub){
-                if( !isset($start[$sub])){
-                    $start[$sub] = array();
-                }
-                $start = &$start[$sub];
-            }
-            
-        }
-        $start[$z] = array();
-        $this->start = &$start[$z];
-         
+        $this->start = &$start;
     }
     
     public function __unset($key){
@@ -71,21 +64,34 @@ class elFinderSessionNamespace  {
     {
         $this->start[$name] = $value;
     }
-    
-    public function getData(){
-        return $this->start;
+
+    /**
+     * Get all data of the namespace
+     * @return array
+     */
+    public function getArray(){
+        $tempData = $this->start;
+        return $tempData;
     }
-    
-    public function setData(array $data){
+
+    /**
+     * Exchange all data on namespace
+     * @param array $data
+     * @return $this
+     */
+    public function exchangeArray(array $data){
         $this->clean();
-        foreach( $data  as $key => $value){
+        foreach($data as $key => $value ){
             $this->start[$key] = $value;
         }        
         return $this;
     }
-    
+
+    /**
+     * Clean the namespace
+     */
     public function clean(){
-        foreach( $this->start  as $key => $value){
+        foreach($this->start as $key => $value ){
             unset($this->start[$key]);
         }
     }

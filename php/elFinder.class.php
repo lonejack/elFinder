@@ -275,8 +275,7 @@ class elFinder {
 	 **/
 	public function __construct($opts) {
 		// try session start | restart
-		$session = elFinderSession::getInstance();
-		$session->start();
+		$session = elFinderSession::getInstance()->start();
 		
 		$sessionUseCmds = array();
 		if (isset($opts['sessionUseCmds']) && is_array($opts['sessionUseCmds'])) {
@@ -657,7 +656,7 @@ class elFinder {
 	 * @author Dmitry (dio) Levashov
 	 */
 	protected function getNetVolumes() {
-        $dataStr = elFinderSession::getInstance()->getNamespace('netVolumes')->getData();
+        $dataStr = elFinderSession::getInstance()->getNamespace('netVolumes')->getArray();
 		if ( !is_null( $dataStr ) ) {
 			if ($data = elFinder::sessionDataDecode($dataStr, 'array')) {
 				return $data;
@@ -674,9 +673,11 @@ class elFinder {
 	 * @author Dmitry (dio) Levashov
 	 */
 	protected function saveNetVolumes($volumes) {
-		$x = elFinderSession::getInstance()
+		
+		elFinderSession::getInstance()
+			->start()
 			->getNamespace('netVolumes')
-			->setData(elFinder::sessionDataEncode($volumes));
+			->exchangeArray(elFinder::sessionDataEncode($volumes));
 	}
 
 	/**

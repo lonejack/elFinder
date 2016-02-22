@@ -645,12 +645,12 @@ abstract class elFinderVolumeDriver {
 	}
 
 	/**
-	 * @return bool
+	 * Restart a Session ans set the sessionCache
+	 * @return void
 	 */
 	protected function sessionRestart() {
-		$start = elFinderSession::getInstance()->start();
+		elFinderSession::getInstance()->start();
 		$this->setSessionCache();
-		return $start;
 	}
 	
 	/**

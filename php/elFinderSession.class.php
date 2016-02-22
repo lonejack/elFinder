@@ -17,29 +17,7 @@ class elFinderSession  {
     protected static $_instance = null;
 
     /**
-     * Is session closed
-     *
-     * @var bool
-     */
-    private $sessionClosed = false;
-
-    /**
-     * @var string the cache key 
-     */
-    private $cacheKey;
-    
-    /**
-     * @var string the volumes key 
-     */
-    private $volKey;
-    
-    /**
-     * @var array volumes created
-     */
-    private $volumes = array();
-
-    /**
-     * @var array static namespaces requested
+     * @var elFinderSessionNamespace array
      */
     private $namespaces = array();
 
@@ -48,6 +26,12 @@ class elFinderSession  {
      */
     private $alias = array();
 
+    /**
+     * State of the session
+     * @var bool false not started, true started
+     */
+    private $state;
+    
     /**
      * elFinderSession constructor.
      */
@@ -62,14 +46,10 @@ class elFinderSession  {
     protected function __clone()
     {}
 
-
-
     /**
-     * Returns an instance of Zend_Auth
-     *
+     * Returns an instance of elFinderSession
      * Singleton pattern implementation
-     *
-     * @return elFinderSession Provides a fluent interface
+     * @return elFinderSession
      */
     public static function getInstance()
     {
@@ -97,9 +77,21 @@ class elFinderSession  {
 
     /**
      * Session Start default method
+     * @return $this
      */
     public function start(){
-        return @session_start(); 
+        if( !is_null($this->state)){
+            if( $this->state ){
+                return $this;
+            }
+        }
+        @session_start();
+        $this->state = true;
+        /** @var elFinderSessionNamespace $ns */
+        foreach( $this->namespaces as $ns ){
+            $ns->rebase();
+        }
+        return $this;
     }
 
     /**
@@ -117,6 +109,7 @@ class elFinderSession  {
      * @return $this
      */
     public function writeClose(){
+        $this->state = false;
         session_write_close();
         return $this;
     }
@@ -126,7 +119,6 @@ class elFinderSession  {
      * session_id
      * @return string
      */
-
     public function session_id(){
         return session_id();
     }
