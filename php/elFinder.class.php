@@ -673,11 +673,11 @@ class elFinder {
 	 * @author Dmitry (dio) Levashov
 	 */
 	protected function saveNetVolumes($volumes) {
-		
 		elFinderSession::getInstance()
 			->start()
 			->getNamespace('netVolumes')
 			->exchangeArray(elFinder::sessionDataEncode($volumes));
+		self::sessionWrite();
 	}
 
 	/**

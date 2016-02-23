@@ -2869,11 +2869,11 @@ abstract class elFinderVolumeDriver {
 		if ($path === false || is_null($path)) {
 			return false;
 		}
-		$is_root = ($path == $this->root);
 		$ret = isset($this->cache[$path])
 			? $this->cache[$path]
 			: $this->updateCache($path, $this->convEncOut($this->_stat($this->convEncIn($path))));
-		if (!$is_root) {			
+		if ( $path != $this->root ) {
+			// is not root
 			return $ret;
 		}
 		// is root
